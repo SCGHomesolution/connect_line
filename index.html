@@ -419,7 +419,7 @@
             GLIDE_TABLE_NAME: 'native-table-Iaj8OYHgkSlTKB831ukh',
             API_TIMEOUT: 15000,
             INIT_TIMEOUT: 30000,
-            ROWID_MAX_AGE: 3600000,
+            ROWID_MAX_AGE: 86400000, // 24 hours (เผื่อ login ใช้เวลานาน)
             MIN_LOGIN_INTERVAL: 5000
         };
         
@@ -486,7 +486,7 @@
             statusBox.style.display = 'block';
         }
         
-        function showSuccess(message = 'กำลังปิดหน้านี้...') {
+        function showSuccess(message = 'กำลังกลับไป LINE...') {
             document.getElementById('successMessage').textContent = message;
             showView('successView');
         }
@@ -545,21 +545,57 @@
         
         function retrieveRowId() {
             const urlParams = new URLSearchParams(window.location.search);
+            
+            // 1. ลองจาก URL query parameter โดยตรง
             let rowid = urlParams.get('rowid');
             if (rowid && validateRowId(rowid).valid) {
+                console.log('Found rowid in URL:', rowid);
                 return rowid;
             }
             
+            // 2. ลองจาก liff.state (LINE อาจ encode params ไว้ตรงนี้)
+            const liffState = urlParams.get('liff.state');
+            if (liffState) {
+                try {
+                    // liff.state อาจเป็น URL encoded query string
+                    const stateParams = new URLSearchParams(liffState);
+                    rowid = stateParams.get('rowid');
+                    if (rowid && validateRowId(rowid).valid) {
+                        console.log('Found rowid in liff.state:', rowid);
+                        return rowid;
+                    }
+                    
+                    // หรืออาจเป็น path?query format
+                    if (liffState.includes('rowid=')) {
+                        const match = liffState.match(/rowid=([^&]+)/);
+                        if (match && match[1]) {
+                            rowid = decodeURIComponent(match[1]);
+                            if (validateRowId(rowid).valid) {
+                                console.log('Found rowid in liff.state (regex):', rowid);
+                                return rowid;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error parsing liff.state:', e);
+                }
+            }
+            
+            // 3. ลองจาก sessionStorage
             rowid = sessionStorage.getItem('saved_rowid');
             if (rowid && isRowIdFresh('session') && validateRowId(rowid).valid) {
+                console.log('Found rowid in sessionStorage:', rowid);
                 return rowid;
             }
             
+            // 4. ลองจาก localStorage
             rowid = localStorage.getItem('saved_rowid');
             if (rowid && isRowIdFresh('local') && validateRowId(rowid).valid) {
+                console.log('Found rowid in localStorage:', rowid);
                 return rowid;
             }
             
+            console.log('No valid rowid found');
             return null;
         }
         
@@ -610,8 +646,10 @@
         async function handleLoginState() {
             try {
                 if (isAlreadyCompleted()) {
-                    showSuccess('เชื่อมต่อข้อมูลสำเร็จแล้ว!\nกรุณาปิดหน้าต่างนี้');
-                    document.getElementById('manualCloseBtn').style.display = 'block';
+                    showSuccess('เชื่อมต่อข้อมูลสำเร็จแล้ว!\nกำลังกลับไป LINE...');
+                    setTimeout(() => {
+                        redirectToLine();
+                    }, 1500);
                     return false;
                 }
                 
@@ -655,8 +693,11 @@
                     
                     showLoading('กำลังเปิด LINE เพื่อยืนยันตัวตน...');
                     
-                    const baseUrl = window.location.origin + window.location.pathname;
-                    liff.login({ redirectUri: baseUrl });
+                    // สร้าง redirect URL ที่รวม rowid ด้วย (สำคัญมาก!)
+                    const redirectUrl = new URL(window.location.origin + window.location.pathname);
+                    redirectUrl.searchParams.set('rowid', state.rowId);
+                    
+                    liff.login({ redirectUri: redirectUrl.toString() });
                     
                     return false;
                 }
@@ -763,38 +804,48 @@
         }
         
         // ==================== WINDOW CLOSING ====================
+        let closeAttempts = 0;
+        
         function closeWindow() {
+            closeAttempts++;
+            
+            // Method 1: LIFF closeWindow (ถ้าอยู่ใน LINE app)
             try {
                 if (typeof liff !== 'undefined' && liff.isInClient()) {
                     liff.closeWindow();
-                    
-                    setTimeout(() => {
-                        if (!document.hidden) {
-                            showManualClose();
-                        }
-                    }, 1500);
-                    return;
                 }
             } catch (e) {
                 console.error('LIFF close failed:', e);
             }
             
+            // Method 2: window.close (ถ้าเปิดจาก window.open)
             try {
-                if (window.opener) {
-                    window.close();
-                    
-                    setTimeout(() => {
-                        if (!document.hidden) {
-                            showManualClose();
-                        }
-                    }, 500);
-                    return;
-                }
+                window.close();
             } catch (e) {
                 console.error('window.close failed:', e);
             }
             
-            showManualClose();
+            // ถ้ายังไม่ปิด หลัง 1 วินาที → redirect ไป LINE app
+            setTimeout(() => {
+                if (!document.hidden) {
+                    redirectToLine();
+                }
+            }, 1000);
+        }
+        
+        function redirectToLine() {
+            // Redirect ไปเปิด LINE app
+            // line:// จะเปิด LINE app โดยตรง
+            window.location.href = 'line://';
+            
+            // Fallback: ถ้า redirect ไม่ทำงาน (iOS อาจ block)
+            // แสดงปุ่มหลัง 2 วินาที
+            setTimeout(() => {
+                if (!document.hidden) {
+                    document.getElementById('successMessage').textContent = 'กรุณากดปิดหน้าต่างนี้';
+                    document.getElementById('manualCloseBtn').style.display = 'block';
+                }
+            }, 2000);
         }
         
         function showManualClose() {
@@ -816,8 +867,10 @@
         async function initializeLiff() {
             try {
                 if (isAlreadyCompleted()) {
-                    showSuccess('เชื่อมต่อข้อมูลสำเร็จแล้ว!\nกรุณาปิดหน้าต่างนี้');
-                    document.getElementById('manualCloseBtn').style.display = 'block';
+                    showSuccess('เชื่อมต่อข้อมูลสำเร็จแล้ว!\nกำลังกลับไป LINE...');
+                    setTimeout(() => {
+                        redirectToLine();
+                    }, 1500);
                     return;
                 }
                 
@@ -871,13 +924,8 @@
             });
             
             document.getElementById('manualCloseBtn').addEventListener('click', function() {
-                try {
-                    if (typeof liff !== 'undefined' && liff.isInClient()) {
-                        liff.closeWindow();
-                    }
-                } catch (e) {
-                    // Ignore
-                }
+                // Redirect ไป LINE app
+                redirectToLine();
             });
             
             initializeLiff();
