@@ -486,7 +486,7 @@
             statusBox.style.display = 'block';
         }
         
-        function showSuccess(message = 'กำลังกลับไป LINE...') {
+        function showSuccess(message = 'กำลังปิดหน้านี้...') {
             document.getElementById('successMessage').textContent = message;
             showView('successView');
         }
@@ -646,10 +646,10 @@
         async function handleLoginState() {
             try {
                 if (isAlreadyCompleted()) {
-                    showSuccess('เชื่อมต่อข้อมูลสำเร็จแล้ว!\nกำลังกลับไป LINE...');
+                    showSuccess('เชื่อมต่อข้อมูลสำเร็จแล้ว!');
                     setTimeout(() => {
-                        redirectToLine();
-                    }, 1500);
+                        closeWindow();
+                    }, 1000);
                     return false;
                 }
                 
@@ -804,11 +804,7 @@
         }
         
         // ==================== WINDOW CLOSING ====================
-        let closeAttempts = 0;
-        
         function closeWindow() {
-            closeAttempts++;
-            
             // Method 1: LIFF closeWindow (ถ้าอยู่ใน LINE app)
             try {
                 if (typeof liff !== 'undefined' && liff.isInClient()) {
@@ -825,31 +821,16 @@
                 console.error('window.close failed:', e);
             }
             
-            // ถ้ายังไม่ปิด หลัง 1 วินาที → redirect ไป LINE app
+            // ถ้ายังไม่ปิด หลัง 1.5 วินาที → แสดงปุ่มให้ปิดเอง
             setTimeout(() => {
                 if (!document.hidden) {
-                    redirectToLine();
+                    showManualClose();
                 }
-            }, 1000);
-        }
-        
-        function redirectToLine() {
-            // Redirect ไปเปิด LINE app
-            // line:// จะเปิด LINE app โดยตรง
-            window.location.href = 'line://';
-            
-            // Fallback: ถ้า redirect ไม่ทำงาน (iOS อาจ block)
-            // แสดงปุ่มหลัง 2 วินาที
-            setTimeout(() => {
-                if (!document.hidden) {
-                    document.getElementById('successMessage').textContent = 'กรุณากดปิดหน้าต่างนี้';
-                    document.getElementById('manualCloseBtn').style.display = 'block';
-                }
-            }, 2000);
+            }, 1500);
         }
         
         function showManualClose() {
-            showSuccess('เชื่อมต่อข้อมูลสำเร็จแล้ว!\nกรุณาปิดหน้าต่างนี้');
+            document.getElementById('successMessage').textContent = 'กรุณาปิดหน้าต่างนี้';
             document.getElementById('manualCloseBtn').style.display = 'block';
         }
         
@@ -867,10 +848,10 @@
         async function initializeLiff() {
             try {
                 if (isAlreadyCompleted()) {
-                    showSuccess('เชื่อมต่อข้อมูลสำเร็จแล้ว!\nกำลังกลับไป LINE...');
+                    showSuccess('เชื่อมต่อข้อมูลสำเร็จแล้ว!');
                     setTimeout(() => {
-                        redirectToLine();
-                    }, 1500);
+                        closeWindow();
+                    }, 1000);
                     return;
                 }
                 
@@ -924,8 +905,16 @@
             });
             
             document.getElementById('manualCloseBtn').addEventListener('click', function() {
-                // Redirect ไป LINE app
-                redirectToLine();
+                // ลองปิดอีกครั้ง
+                try {
+                    if (typeof liff !== 'undefined' && liff.isInClient()) {
+                        liff.closeWindow();
+                    }
+                    window.close();
+                } catch (e) {
+                    // ถ้าปิดไม่ได้จริงๆ แสดงข้อความ
+                    document.getElementById('successMessage').textContent = 'กรุณากดปุ่ม X ด้านบนขวา';
+                }
             });
             
             initializeLiff();
