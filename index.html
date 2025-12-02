@@ -385,9 +385,10 @@
             <div id="successMessage" class="message">
                 กำลังปิดหน้านี้...
             </div>
+            <!-- ข้อความธรรมดาแทนปุ่ม -->
             <div id="manualCloseText" style="display:none; margin-top:15px; font-size:16px; color:#666;">
-        กรุณากดปุ่ม X ด้านบนขวาเพื่อปิดหน้านี้
-    </div>
+                กรุณากดปุ่ม X ด้านบนขวาเพื่อปิดหน้าต่างนี้
+            </div>
         </div>
         
         <!-- Error View -->
@@ -414,12 +415,13 @@
         const CONFIG = {
             LIFF_ID: '2008146540-V1XjpJp4',
             GLIDE_API_URL: 'https://api.glideapp.io/api/function/mutateTables',
-            GLIDE_API_TOKEN: 'Bearer ac38ea2f-fc70-4c94-a2c8-7a57783484e4',
+            // ใส่ token จริงของคุณเองตรงนี้เวลาใช้งานจริง
+            GLIDE_API_TOKEN: 'Bearer YOUR_GLIDE_API_TOKEN_HERE',
             GLIDE_APP_ID: 'wFtUtanipzHwHsjbHCij',
             GLIDE_TABLE_NAME: 'native-table-Iaj8OYHgkSlTKB831ukh',
             API_TIMEOUT: 15000,
             INIT_TIMEOUT: 3000,
-            ROWID_MAX_AGE: 86400000, // 24 hours (เผื่อ login ใช้เวลานาน)
+            ROWID_MAX_AGE: 86400000, // 24 hours
             MIN_LOGIN_INTERVAL: 5000
         };
         
@@ -437,7 +439,7 @@
             wave: `<svg class="wave-icon" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
                 <path fill="#FCEA2B" d="M16.5 33.5c-1.5-3-2.5-6-2.5-9.5 0-4.5 2-8.5 5.5-11 2-1.5 4.5-2.5 7-2.5 3.5 0 6.5 1.5 8.5 4l1.5 2c.5.5 1 1.5 1 2.5 0 1.5-.5 2.5-1.5 3.5l-2 2c-1 1-1.5 2.5-1.5 4v8.5"/>
                 <path fill="#F4AA41" d="M23.5 15c-2.5 1.5-4.5 4-5 7-.5 2 0 4 1 5.5 1.5 2 3.5 3.5 6 3.5h2v-5c0-2 .5-4 1.5-5.5l2-3c.5-1 .5-2 0-3-.5-.5-1-1-2-1.5-2-1-4-1-6 1z"/>
-                <path fill="#FCEA2B" d="M52.5 29c2 0 3.5 1.5 3.5 3.5v15c0 8.5-7 15.5-15.5 15.5h-5c-8.5 0-15.5-7-15.5-15.5v-7c0-2 1.5-3.5 3.5-3.5s3.5 1.5 3.5 3.5v-6c0-2 1.5-3.5 3.5-3.5s3.5 1.5 3.5 3.5v-3c0-2 1.5-3.5 3.5-3.5s3.5 1.5 3.5 3.5v3c0-2 1.5-3.5 3.5-3.5s3.5 1.5 3.5 3.5v6c0-2 1.5-3.5 3.5-3.5z"/>
+                <path fill="#FCEA2B" d="M52.5 29c2 0 3.5 1.5 3.5 3.5v15c0 8.5-7 15.5-15.5 15.5h-5c-8.5 0-15.5-7-15.5-15.5v-7c0-2 1.5-3.5 3.5-3.5s3.5 1.5 3.5 3.5v-6c0-2 1.5-3.5 3.5-3.5s3.5 1.5 3.5 3.5v3c0-2 1.5-3.5 3.5-3.5s3.5 1.5 3.5 3.5v6c0-2 1.5-3.5 3.5-3.5z"/>
                 <g fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
                     <path d="M23 40.5v7c0 8.5 7 15.5 15.5 15.5h2c8.5 0 15.5-7 15.5-15.5v-15c0-2-1.5-3.5-3.5-3.5s-3.5 1.5-3.5 3.5"/>
                     <path d="M49 35v-6c0-2-1.5-3.5-3.5-3.5s-3.5 1.5-3.5 3.5"/>
@@ -546,18 +548,17 @@
         function retrieveRowId() {
             const urlParams = new URLSearchParams(window.location.search);
             
-            // 1. ลองจาก URL query parameter โดยตรง
+            // 1. จาก URL query parameter
             let rowid = urlParams.get('rowid');
             if (rowid && validateRowId(rowid).valid) {
                 console.log('Found rowid in URL:', rowid);
                 return rowid;
             }
             
-            // 2. ลองจาก liff.state (LINE อาจ encode params ไว้ตรงนี้)
+            // 2. จาก liff.state
             const liffState = urlParams.get('liff.state');
             if (liffState) {
                 try {
-                    // liff.state อาจเป็น URL encoded query string
                     const stateParams = new URLSearchParams(liffState);
                     rowid = stateParams.get('rowid');
                     if (rowid && validateRowId(rowid).valid) {
@@ -565,7 +566,6 @@
                         return rowid;
                     }
                     
-                    // หรืออาจเป็น path?query format
                     if (liffState.includes('rowid=')) {
                         const match = liffState.match(/rowid=([^&]+)/);
                         if (match && match[1]) {
@@ -581,14 +581,14 @@
                 }
             }
             
-            // 3. ลองจาก sessionStorage
+            // 3. จาก sessionStorage
             rowid = sessionStorage.getItem('saved_rowid');
             if (rowid && isRowIdFresh('session') && validateRowId(rowid).valid) {
                 console.log('Found rowid in sessionStorage:', rowid);
                 return rowid;
             }
             
-            // 4. ลองจาก localStorage
+            // 4. จาก localStorage
             rowid = localStorage.getItem('saved_rowid');
             if (rowid && isRowIdFresh('local') && validateRowId(rowid).valid) {
                 console.log('Found rowid in localStorage:', rowid);
@@ -693,7 +693,6 @@
                     
                     showLoading('กำลังเปิด LINE เพื่อยืนยันตัวตน...');
                     
-                    // สร้าง redirect URL ที่รวม rowid ด้วย (สำคัญมาก!)
                     const redirectUrl = new URL(window.location.origin + window.location.pathname);
                     redirectUrl.searchParams.set('rowid', state.rowId);
                     
@@ -805,7 +804,6 @@
         
         // ==================== WINDOW CLOSING ====================
         function closeWindow() {
-            // Method 1: LIFF closeWindow (ถ้าอยู่ใน LINE app)
             try {
                 if (typeof liff !== 'undefined' && liff.isInClient()) {
                     liff.closeWindow();
@@ -814,14 +812,12 @@
                 console.error('LIFF close failed:', e);
             }
             
-            // Method 2: window.close (ถ้าเปิดจาก window.open)
             try {
                 window.close();
             } catch (e) {
                 console.error('window.close failed:', e);
             }
             
-            // ถ้ายังไม่ปิด หลัง 1.5 วินาที → แสดงปุ่มให้ปิดเอง
             setTimeout(() => {
                 if (!document.hidden) {
                     showManualClose();
@@ -830,8 +826,8 @@
         }
         
         function showManualClose() {
-            document.getElementById('successMessage').textContent = 'กรุณาปิดหน้าต่างนี้';
-            document.getElementById('manualCloseBtn').style.display = 'block';
+            document.getElementById('successMessage').textContent = 'กรุณากดปุ่ม X ด้านบนขวาเพื่อปิดหน้าต่างนี้';
+            document.getElementById('manualCloseText').style.display = 'block';
         }
         
         // ==================== SESSION CLEANUP ====================
@@ -902,19 +898,6 @@
             
             document.getElementById('closeBtn').addEventListener('click', function() {
                 closeWindow();
-            });
-            
-            document.getElementById('manualCloseBtn').addEventListener('click', function() {
-                // ลองปิดอีกครั้ง
-                try {
-                    if (typeof liff !== 'undefined' && liff.isInClient()) {
-                        liff.closeWindow();
-                    }
-                    window.close();
-                } catch (e) {
-                    // ถ้าปิดไม่ได้จริงๆ แสดงข้อความ
-                    document.getElementById('successMessage').textContent = 'กรุณากดปุ่ม X ด้านบนขวา';
-                }
             });
             
             initializeLiff();
