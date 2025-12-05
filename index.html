@@ -27,7 +27,7 @@
         }
         
         body {
-            background: linear-gradient(135deg, #00c851, #00ff41);
+            background: #f3f4f6;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -358,15 +358,16 @@
             <div id="loadingMessage" class="message">กำลังเชื่อมต่อกับ LINE...</div>
         </div>
         
-        <!-- User Info View -->
+        <!-- User Info View (ใช้เป็นหน้าระหว่างทาง แต่ไม่ต้องกดปุ่มแล้ว) -->
         <div id="userInfoView" class="view">
             <img id="profileImage" class="profile-image" src="" alt="Profile Picture">
             <div id="userName" class="user-name"></div>
             <div class="greeting-text">
-                กรุณายืนยันเพื่อรับการแจ้งเตือน<br>ผ่าน LINE
+                กำลังตั้งค่ารับการแจ้งเตือนผ่าน LINE<br>โปรดรอสักครู่...
             </div>
             
-            <button id="confirmBtn" class="btn btn-primary">
+            <!-- ปุ่มนี้ถูกซ่อน ไม่ให้ผู้ใช้กด -->
+            <button id="confirmBtn" class="btn btn-primary" style="display:none;">
                 ยืนยันการเชื่อมต่อ
             </button>
         </div>
@@ -427,7 +428,7 @@
             GLIDE_TABLE_NAME: 'native-table-Iaj8OYHgkSlTKB831ukh',
             API_TIMEOUT: 15000,
             INIT_TIMEOUT: 3000,
-            ROWID_MAX_AGE: 86400000, // 24 hours (เผื่อ login ใช้เวลานาน)
+            ROWID_MAX_AGE: 86400000, // 24 hours
             MIN_LOGIN_INTERVAL: 5000
         };
         
@@ -445,7 +446,7 @@
             wave: `<svg class="wave-icon" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
                 <path fill="#FCEA2B" d="M16.5 33.5c-1.5-3-2.5-6-2.5-9.5 0-4.5 2-8.5 5.5-11 2-1.5 4.5-2.5 7-2.5 3.5 0 6.5 1.5 8.5 4l1.5 2c.5.5 1 1.5 1 2.5 0 1.5-.5 2.5-1.5 3.5l-2 2c-1 1-1.5 2.5-1.5 4v8.5"/>
                 <path fill="#F4AA41" d="M23.5 15c-2.5 1.5-4.5 4-5 7-.5 2 0 4 1 5.5 1.5 2 3.5 3.5 6 3.5h2v-5c0-2 .5-4 1.5-5.5l2-3c.5-1 .5-2 0-3-.5-.5-1-1-2-1.5-2-1-4-1-6 1z"/>
-                <path fill="#FCEA2B" d="M52.5 29c2 0 3.5 1.5 3.5 3.5v15c0 8.5-7 15.5-15.5 15.5h-5c-8.5 0-15.5-7-15.5-15.5v-7c0-2 1.5-3.5 3.5-3.5s3.5 1.5 3.5 3.5v-6c0-2 1.5-3.5 3.5-3.5s3.5 1.5 3.5 3.5v-3c0-2 1.5-3.5 3.5-3.5s3.5 1.5 3.5 3.5v3c0-2 1.5-3.5 3.5-3.5s3.5 1.5 3.5 3.5v6c0-2 1.5-3.5 3.5-3.5z"/>
+                <path fill="#FCEA2B" d="M52.5 29c2 0 3.5 1.5 3.5 3.5v15c0 8.5-7 15.5-15.5 15.5h-5c-8.5 0-15.5-7-15.5-15.5v-7c0-2 1.5-3.5 3.5-3.5s3.5 1.5 3.5 3.5v-6c0-2 1.5-3.5 3.5-3.5s3.5 1.5 3.5 3.5v3c0-2 1.5-3.5 3.5-3.5s3.5 1.5 3.5 3.5v6c0-2 1.5-3.5 3.5-3.5z"/>
                 <g fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
                     <path d="M23 40.5v7c0 8.5 7 15.5 15.5 15.5h2c8.5 0 15.5-7 15.5-15.5v-15c0-2-1.5-3.5-3.5-3.5s-3.5 1.5-3.5 3.5"/>
                     <path d="M49 35v-6c0-2-1.5-3.5-3.5-3.5s-3.5 1.5-3.5 3.5"/>
@@ -471,6 +472,7 @@
             showView('loadingView');
         }
         
+        // ✅ ปรับให้แค่แสดงชื่อ/รูป แล้วเรียกส่งข้อมูลอัตโนมัติ
         function showUserInfo(profile) {
             state.userProfile = profile;
             
@@ -480,6 +482,13 @@
             document.getElementById('userName').innerHTML = `สวัสดีค่ะ คุณ${profile.displayName || 'ผู้ใช้'} ${ICONS.wave}`;
             
             showView('userInfoView');
+            
+            // เริ่มส่งข้อมูลอัตโนมัติ (ไม่ต้องกดปุ่ม)
+            setTimeout(() => {
+                if (!state.isProcessing) {
+                    sendToGlideAPI();
+                }
+            }, 500);
         }
         
         function showProcessing(message) {
@@ -565,7 +574,6 @@
             const liffState = urlParams.get('liff.state');
             if (liffState) {
                 try {
-                    // liff.state อาจเป็น URL encoded query string
                     const stateParams = new URLSearchParams(liffState);
                     rowid = stateParams.get('rowid');
                     if (rowid && validateRowId(rowid).valid) {
@@ -573,7 +581,6 @@
                         return rowid;
                     }
                     
-                    // หรืออาจเป็น path?query format
                     if (liffState.includes('rowid=')) {
                         const match = liffState.match(/rowid=([^&]+)/);
                         if (match && match[1]) {
@@ -701,7 +708,6 @@
                     
                     showLoading('กำลังเปิด LINE เพื่อยืนยันตัวตน...');
                     
-                    // สร้าง redirect URL ที่รวม rowid ด้วย (สำคัญมาก!)
                     const redirectUrl = new URL(window.location.origin + window.location.pathname);
                     redirectUrl.searchParams.set('rowid', state.rowId);
                     
@@ -726,6 +732,8 @@
                 showLoading('กำลังดึงข้อมูลโปรไฟล์...');
                 const profile = await liff.getProfile();
                 
+                // เดิม: showUserInfo แล้วให้กดปุ่ม
+                // ตอนนี้: showUserInfo แล้ว auto ส่งต่อไป Glide
                 showUserInfo(profile);
                 return true;
                 
@@ -813,7 +821,6 @@
         
         // ==================== WINDOW CLOSING ====================
         function closeWindow() {
-            // Method 1: LIFF closeWindow (ถ้าอยู่ใน LINE app)
             try {
                 if (typeof liff !== 'undefined' && liff.isInClient()) {
                     liff.closeWindow();
@@ -822,14 +829,12 @@
                 console.error('LIFF close failed:', e);
             }
             
-            // Method 2: window.close (ถ้าเปิดจาก window.open)
             try {
                 window.close();
             } catch (e) {
                 console.error('window.close failed:', e);
             }
             
-            // ถ้ายังไม่ปิด หลัง 1.5 วินาที → แสดงข้อความให้ปิดเอง
             setTimeout(() => {
                 if (!document.hidden) {
                     showManualClose();
@@ -893,11 +898,15 @@
         
         // ==================== EVENT LISTENERS ====================
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('confirmBtn').addEventListener('click', function() {
-                this.disabled = true;
-                this.style.animation = 'none';
-                sendToGlideAPI();
-            });
+            // ปุ่ม confirm ถูกซ่อนไว้แล้ว แต่เผื่ออนาคตยังไม่ลบ listener
+            const confirmBtn = document.getElementById('confirmBtn');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', function() {
+                    this.disabled = true;
+                    this.style.animation = 'none';
+                    sendToGlideAPI();
+                });
+            }
             
             document.getElementById('retryBtn').addEventListener('click', function() {
                 clearCompletedFlag();
