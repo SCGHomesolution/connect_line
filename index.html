@@ -85,60 +85,33 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* Profile Image */
-        .profile-image {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin: 0 auto 20px;
-            border: 4px solid var(--primary-color);
-            display: block;
-            animation: fadeInScale 0.5s ease-out;
-        }
-        
-        @keyframes fadeInScale {
-            0% {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-        
-        /* User Info */
-        .user-name {
-            font-size: 24px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 10px;
-        }
-        
-        .greeting-text {
-            font-size: 16px;
+        /* Messages */
+        .message {
             color: #666;
-            margin-bottom: 30px;
+            font-size: 16px;
             line-height: 1.6;
+            margin-bottom: 20px;
         }
         
-        /* Wave hand animation */
-        .wave-icon {
-            display: inline-block;
-            width: 28px;
-            height: 28px;
-            vertical-align: middle;
-            margin-left: 5px;
-            animation: wave 1.5s ease-in-out infinite;
-            transform-origin: 70% 70%;
+        .message.error {
+            color: var(--error-color);
+            font-weight: 500;
         }
         
-        @keyframes wave {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(20deg); }
-            50% { transform: rotate(-10deg); }
-            75% { transform: rotate(20deg); }
+        .message.success {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        /* Status Box */
+        .status-box {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 14px;
+            color: #333;
+            border-left: 4px solid var(--primary-color);
         }
         
         /* Buttons */
@@ -192,35 +165,6 @@
         .btn-secondary:hover:not(:disabled) {
             border-color: #999;
             color: #333;
-        }
-        
-        /* Messages */
-        .message {
-            color: #666;
-            font-size: 16px;
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-        
-        .message.error {
-            color: var(--error-color);
-            font-weight: 500;
-        }
-        
-        .message.success {
-            color: var(--primary-color);
-            font-weight: 500;
-        }
-        
-        /* Status Box */
-        .status-box {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-            font-size: 14px;
-            color: #333;
-            border-left: 4px solid var(--primary-color);
         }
         
         /* ==================== SVG ICONS ==================== */
@@ -358,20 +302,6 @@
             <div id="loadingMessage" class="message">กำลังเชื่อมต่อกับ LINE...</div>
         </div>
         
-        <!-- User Info View (ใช้เป็นหน้าระหว่างทาง แต่ไม่ต้องกดปุ่มแล้ว) -->
-        <div id="userInfoView" class="view">
-            <img id="profileImage" class="profile-image" src="" alt="Profile Picture">
-            <div id="userName" class="user-name"></div>
-            <div class="greeting-text">
-                กำลังตั้งค่ารับการแจ้งเตือนผ่าน LINE<br>โปรดรอสักครู่...
-            </div>
-            
-            <!-- ปุ่มนี้ถูกซ่อน ไม่ให้ผู้ใช้กด -->
-            <button id="confirmBtn" class="btn btn-primary" style="display:none;">
-                ยืนยันการเชื่อมต่อ
-            </button>
-        </div>
-        
         <!-- Processing View -->
         <div id="processingView" class="view">
             <div class="spinner"></div>
@@ -428,7 +358,7 @@
             GLIDE_TABLE_NAME: 'native-table-Iaj8OYHgkSlTKB831ukh',
             API_TIMEOUT: 15000,
             INIT_TIMEOUT: 3000,
-            ROWID_MAX_AGE: 86400000, // 24 hours
+            ROWID_MAX_AGE: 86400000, // 24 ชั่วโมง
             MIN_LOGIN_INTERVAL: 5000
         };
         
@@ -439,24 +369,6 @@
             isLoggingIn: false,
             isProcessing: false,
             lastLoginAttempt: 0
-        };
-        
-        // ==================== SVG ICONS ====================
-        const ICONS = {
-            wave: `<svg class="wave-icon" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
-                <path fill="#FCEA2B" d="M16.5 33.5c-1.5-3-2.5-6-2.5-9.5 0-4.5 2-8.5 5.5-11 2-1.5 4.5-2.5 7-2.5 3.5 0 6.5 1.5 8.5 4l1.5 2c.5.5 1 1.5 1 2.5 0 1.5-.5 2.5-1.5 3.5l-2 2c-1 1-1.5 2.5-1.5 4v8.5"/>
-                <path fill="#F4AA41" d="M23.5 15c-2.5 1.5-4.5 4-5 7-.5 2 0 4 1 5.5 1.5 2 3.5 3.5 6 3.5h2v-5c0-2 .5-4 1.5-5.5l2-3c.5-1 .5-2 0-3-.5-.5-1-1-2-1.5-2-1-4-1-6 1z"/>
-                <path fill="#FCEA2B" d="M52.5 29c2 0 3.5 1.5 3.5 3.5v15c0 8.5-7 15.5-15.5 15.5h-5c-8.5 0-15.5-7-15.5-15.5v-7c0-2 1.5-3.5 3.5-3.5s3.5 1.5 3.5 3.5v-6c0-2 1.5-3.5 3.5-3.5s3.5 1.5 3.5 3.5v3c0-2 1.5-3.5 3.5-3.5s3.5 1.5 3.5 3.5v6c0-2 1.5-3.5 3.5-3.5z"/>
-                <g fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
-                    <path d="M23 40.5v7c0 8.5 7 15.5 15.5 15.5h2c8.5 0 15.5-7 15.5-15.5v-15c0-2-1.5-3.5-3.5-3.5s-3.5 1.5-3.5 3.5"/>
-                    <path d="M49 35v-6c0-2-1.5-3.5-3.5-3.5s-3.5 1.5-3.5 3.5"/>
-                    <path d="M42 31v-3c0-2-1.5-3.5-3.5-3.5s-3.5 1.5-3.5 3.5v3"/>
-                    <path d="M35 34v-6c0-2-1.5-3.5-3.5-3.5s-3.5 1.5-3.5 3.5v12.5"/>
-                    <path d="M23 40.5v-7c0-2-1.5-3.5-3.5-3.5"/>
-                    <path d="M35 24v-7c0-2.5-2-4.5-4.5-4.5-2 0-4 1.5-4.5 3.5"/>
-                    <path d="M26 16c-.5-3-3-5.5-6-5.5-3.5 0-6 2.5-6 6 0 6 5 12 9 16"/>
-                </g>
-            </svg>`
         };
         
         // ==================== VIEW MANAGEMENT ====================
@@ -470,25 +382,6 @@
         function showLoading(message) {
             document.getElementById('loadingMessage').textContent = message;
             showView('loadingView');
-        }
-        
-        // ✅ ปรับให้แค่แสดงชื่อ/รูป แล้วเรียกส่งข้อมูลอัตโนมัติ
-        function showUserInfo(profile) {
-            state.userProfile = profile;
-            
-            const defaultImage = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%23ddd"/><text x="50" y="55" font-family="Arial" font-size="14" fill="%23999" text-anchor="middle">No Image</text></svg>';
-            
-            document.getElementById('profileImage').src = profile.pictureUrl || defaultImage;
-            document.getElementById('userName').innerHTML = `สวัสดีค่ะ คุณ${profile.displayName || 'ผู้ใช้'} ${ICONS.wave}`;
-            
-            showView('userInfoView');
-            
-            // เริ่มส่งข้อมูลอัตโนมัติ (ไม่ต้องกดปุ่ม)
-            setTimeout(() => {
-                if (!state.isProcessing) {
-                    sendToGlideAPI();
-                }
-            }, 500);
         }
         
         function showProcessing(message) {
@@ -530,7 +423,7 @@
                 const completedTime = parseInt(sessionStorage.getItem('liff_completed_time') || '0');
                 const age = Date.now() - completedTime;
                 
-                return completed === 'true' && age < 300000;
+                return completed === 'true' && age < 300000; // 5 นาที
             } catch (e) {
                 return false;
             }
@@ -563,14 +456,14 @@
         function retrieveRowId() {
             const urlParams = new URLSearchParams(window.location.search);
             
-            // 1. ลองจาก URL query parameter โดยตรง
+            // 1. จาก URL query parameter โดยตรง
             let rowid = urlParams.get('rowid');
             if (rowid && validateRowId(rowid).valid) {
                 console.log('Found rowid in URL:', rowid);
                 return rowid;
             }
             
-            // 2. ลองจาก liff.state (LINE อาจ encode params ไว้ตรงนี้)
+            // 2. จาก liff.state
             const liffState = urlParams.get('liff.state');
             if (liffState) {
                 try {
@@ -596,14 +489,14 @@
                 }
             }
             
-            // 3. ลองจาก sessionStorage
+            // 3. จาก sessionStorage
             rowid = sessionStorage.getItem('saved_rowid');
             if (rowid && isRowIdFresh('session') && validateRowId(rowid).valid) {
                 console.log('Found rowid in sessionStorage:', rowid);
                 return rowid;
             }
             
-            // 4. ลองจาก localStorage
+            // 4. จาก localStorage
             rowid = localStorage.getItem('saved_rowid');
             if (rowid && isRowIdFresh('local') && validateRowId(rowid).valid) {
                 console.log('Found rowid in localStorage:', rowid);
@@ -729,12 +622,12 @@
                 state.rowId = rowid;
                 updateUrlWithRowId(rowid);
                 
-                showLoading('กำลังดึงข้อมูลโปรไฟล์...');
+                // ดึงโปรไฟล์ แล้วส่งเข้า Glide ทันที
+                showLoading('กำลังดึงข้อมูลจาก LINE...');
                 const profile = await liff.getProfile();
+                state.userProfile = profile;
                 
-                // เดิม: showUserInfo แล้วให้กดปุ่ม
-                // ตอนนี้: showUserInfo แล้ว auto ส่งต่อไป Glide
-                showUserInfo(profile);
+                await sendToGlideAPI();
                 return true;
                 
             } catch (error) {
@@ -821,6 +714,7 @@
         
         // ==================== WINDOW CLOSING ====================
         function closeWindow() {
+            // ปิดผ่าน LIFF (ใน LINE)
             try {
                 if (typeof liff !== 'undefined' && liff.isInClient()) {
                     liff.closeWindow();
@@ -829,12 +723,14 @@
                 console.error('LIFF close failed:', e);
             }
             
+            // ปิดผ่าน window.close (กรณีเปิดจาก window.open)
             try {
                 window.close();
             } catch (e) {
                 console.error('window.close failed:', e);
             }
             
+            // ถ้ายังไม่ปิด ให้แสดงข้อความให้ผู้ใช้กดปิดเอง
             setTimeout(() => {
                 if (!document.hidden) {
                     showManualClose();
@@ -898,16 +794,6 @@
         
         // ==================== EVENT LISTENERS ====================
         document.addEventListener('DOMContentLoaded', function() {
-            // ปุ่ม confirm ถูกซ่อนไว้แล้ว แต่เผื่ออนาคตยังไม่ลบ listener
-            const confirmBtn = document.getElementById('confirmBtn');
-            if (confirmBtn) {
-                confirmBtn.addEventListener('click', function() {
-                    this.disabled = true;
-                    this.style.animation = 'none';
-                    sendToGlideAPI();
-                });
-            }
-            
             document.getElementById('retryBtn').addEventListener('click', function() {
                 clearCompletedFlag();
                 if (state.userProfile && state.rowId) {
